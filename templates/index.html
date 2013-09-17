@@ -1,0 +1,42 @@
+<!doctype html>
+<html ng-app="PostbinDash">
+    {{> head }}
+    <body>
+        <div class="container page" ng-controller="messageDisplayCtrl">
+
+            <div class="navbar navbar-default navbar-fixed-top">
+                <div class="container">
+                    <form ng-submit="sendMessage()" class="form-inline testPostForm" role="form">
+                        <h2>Message Test</h2>
+                        <div class="form-group">
+                            <input id="postData" type="text" class="form-control" placeholder="enter a test message" ng-model="postData"/>
+                            <input type="button" class="btn btn-primary" value="Send" ng-click="sendMessage()"/>
+                        </div>
+                    </form>
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" ng-model="socketSendEnabled"/>
+                            Send message via WebSocket
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contents">
+                <h2>Message queue <button type="button" class="btn btn-danger" ng-click="deleteAllMessages()">Delete all</button></h2>
+                <table class="table table-bordered" ng-show="messages.length" ng-cloak>
+                    <tr ng-repeat="msg in messages">
+                        <td class="timeCell">[[msg.time.toLocaleTimeString()]]</td>
+                        <td>[[msg.msg]]</td>
+                    </tr>
+                </table>
+                <div ng-hide="messages.length">
+                    <p>No items yet :-(</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script type="text/javascript">
+        window.postbinApp.initData = {{{init-data}}};
+    </script>
+</html>
