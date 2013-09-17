@@ -1,6 +1,16 @@
 # postbin
 
-Minimal app that shows whatever is posted to it on a web interface
+Minimal client and server app that shows whatever is posted to it on a web interface.
+
+This project requires both client and server to be able to use WebSockets.
+
+When the server is running, point your browser to the root of the server.
+This will serve a dashboard of posts.
+
+Data can be sent to the server via 2 endpoints:
+
+* /post which takes a UTF-8 encoded text payload
+* /ws which takes a JSON payload
 
 ## Local setup
 
