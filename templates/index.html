@@ -15,8 +15,8 @@
                     </form>
                     <div class="checkbox">
                         <label>
-                            <input type="checkbox" ng-model="socketSendEnabled"/>
-                            Send message via WebSocket
+                            <input type="checkbox" ng-model="socketEnabled" ng-disabled="socketDisabled"/>
+                            Enable WebSocket
                         </label>
                     </div>
                 </div>

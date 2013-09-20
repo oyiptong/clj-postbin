@@ -1,5 +1,9 @@
 "use strict";
 
+const kWebSocketUrl = "ws://" + window.location.host + "/ws";
+const kPostUrl = window.location.href + "post";
+const kXHRCommandUrl = window.location.href + "xhr";
+
 (function(postbinApp, angular) {
   var postbinDash = angular.module("PostbinDash", [], function($interpolateProvider) {
     $interpolateProvider.startSymbol("[[");
@@ -7,11 +11,16 @@
   });
   postbinApp.postbinDash = postbinDash;
 
-  var Socket = function($rootScope, $window) {
-    this.socket = new WebSocket("ws://" + $window.location.host + "/ws");
+  var Socket = function($rootScope) {
+    this.socket = null;
     this.$rootScope = $rootScope;
+    this.openConnection();
   }
   Socket.prototype = {
+    openConnection: function() {
+      this.socket = new WebSocket(kWebSocketUrl);
+    },
+
     on: function(eventName, callback) {
       var that = this;
       this.socket.addEventListener(eventName, function(evt) {
@@ -20,6 +29,7 @@
         });
       });
     },
+
     send: function(data) {
       this.socket.send(data);
     },
@@ -29,7 +39,34 @@
   postbinDash.controller("messageDisplayCtrl", function($scope, $socket, $http) {
     $scope.messages = [];
     $scope.postData = "";
-    $scope.socketSendEnabled = true;
+    $scope.socketEnabled = false;
+    $scope.socketDisabled = true;
+
+    /** app state modifiers **/
+
+    $scope.handleRemoteCommand = function(command) {
+      if (command.type == "delta") {
+        $scope.addDelta(command.data);
+      }
+      else if (command.type == "purge") {
+        $scope.purge()
+      }
+      else if (command.type == "data") {
+        $scope.replaceData(command.data.reverse());
+      }
+    }
+    $scope.$on("remoteCommand", function(command) {
+      $scope.handleRemoteCommand(command);
+    }); 
+
+    $scope.addDelta = function(delta) {
+      var datedDelta  = $scope.dataMakeDate(delta);
+      $scope.messages.unshift.apply($scope.messages, datedDelta);
+    }
+
+    $scope.purge = function() {
+      $scope.messages = [];
+    }
 
     $scope.dataMakeDate = function(data) {
       var datedData = []
@@ -45,19 +82,18 @@
     }
     $scope.replaceData(window.postbinApp.initData.reverse());
 
+    /** remote communication **/
+
     $scope.sendMessage = function() {
       var postData = $scope.postData; 
       if (postData == "") {
         return false;
       }
-      if ($scope.socketSendEnabled) {
-        // send via websockets
+      if ($scope.socketEnabled) {
         $socket.send(JSON.stringify({type: "message", data: postData}));
       }
       else {
-        // send via XHR
-        $http.post(window.location.href + "post", $scope.postData)
-          .success(function(){
+        $http.post(kPostUrl, $scope.postData).then(function() {
             $scope.postData = "";
         });
       }
@@ -65,19 +101,48 @@
     }
 
     $scope.deleteAllMessages = function() {
-      $socket.send(JSON.stringify({type: "delete"}));
+      if ($scope.socketEnabled) {
+        $socket.send(JSON.stringify({type: "delete"}));
+      }
+      else {
+        $scope.sendXHRCommand(JSON.stringify({type: "delete"}));
+      }
     }
+
+    $scope.fetchAllData = function() {
+      if ($scope.socketEnabled) {
+        $socket.send(JSON.stringify({type: "fetch-all"}));
+      }
+      else {
+        $scope.sendXHRCommand(JSON.stringify({type: "fetch-all"}));
+      }
+    }
+
+    /** XHR handlers **/
+
+    $scope.sendXHRCommand = function(message) {
+      $http.post(kXHRCommandUrl, message)
+        .then(function(remoteCommand){
+          if (remoteCommand) {
+            $scope.$broadcast("remoteCommand", remoteCommand);
+          }
+        });
+    }
+
+    /** socket handlers **/
 
     $socket.on("message", function(data) {
       var command = JSON.parse(data);
+      $scope.handleRemoteCommand(command);
+    });
 
-      if (command.type == "delta") {
-        var datedDelta = $scope.dataMakeDate(command.data);
-        $scope.messages.unshift.apply($scope.messages, datedDelta);
-      }
-      else if (command.type == "purge") {
-        $scope.messages = [];
-      }
+    $socket.on("open", function() {
+      $scope.socketEnabled = true;
+      $scope.socketDisabled = false;
+    });
+
+    $socket.on("close", function() {
+      $scope.socketEnabled = false;
     });
   });
 
