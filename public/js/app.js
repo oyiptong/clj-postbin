@@ -1,8 +1,8 @@
 "use strict";
 
-const kWebSocketUrl = "ws://" + window.location.host + "/ws";
-const kPostUrl = window.location.href + "post";
-const kXHRCommandUrl = window.location.href + "xhr";
+var kWebSocketUrl = "ws://" + window.location.host + "/ws";
+var kPostUrl = window.location.href + "post";
+var kXHRCommandUrl = window.location.href + "xhr";
 
 (function(postbinApp, angular) {
   var postbinDash = angular.module("PostbinDash", [], function($interpolateProvider) {
