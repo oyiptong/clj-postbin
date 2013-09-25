@@ -49,7 +49,7 @@ var kXHRCommandUrl = window.location.href + "xhr";
         $scope.addDelta(command.data);
       }
       else if (command.type == "purge") {
-        $scope.purge()
+        $scope.purge();
       }
       else if (command.type == "data") {
         $scope.replaceData(command.data.reverse());
